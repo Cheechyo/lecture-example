@@ -18,6 +18,8 @@ public class FileWatcher {
     private File pathToWatch;
     private OnDeletedEventListener deletedEventListener = null;
     private OnModifiedEventListener modifiedEventListener = null;
+    private Thread watchThread = null;
+
     interface OnDeletedEventListener{
         void onDeleted();
     }
@@ -42,34 +44,42 @@ public class FileWatcher {
                     }
                 })
                 .watch(args[0]);
+        while(true);
     }
 
-    private void watch(String path) throws InterruptedException {
-        pathToWatch = new File(path);
-        if (!pathToWatch.exists()) {
-            logger.log(pathToWatch + " is NOT exist");
-        }
-        logger.log("Watching : " + pathToWatch);
-        while(true) {
-            long lastChecked = System.currentTimeMillis();
-            Thread.sleep(CHECK_INTERVAL);
-            if (!pathToWatch.exists()) {
-                if (this.deletedEventListener != null){
-                    deletedEventListener.onDeleted();
+    private void watch(final String path) throws InterruptedException {
+        watchThread = new Thread(new Runnable() {
+            public void run() {
+                pathToWatch = new File(path);
+                if (!pathToWatch.exists()) {
+                    logger.log(pathToWatch + " is NOT exist");
                 }
-                break;
-            }
-
-            Set<File> fileSet = FileUtil.listFiles(pathToWatch);
-            for (File file : fileSet) {
-                if (file.lastModified() > lastChecked) {
-                    if (this.modifiedEventListener != null){
-                        modifiedEventListener.onModified(file);
+                logger.log("Watching : " + pathToWatch);
+                while(true) {
+                    long lastChecked = System.currentTimeMillis();
+                    try {
+                        Thread.sleep(CHECK_INTERVAL);
+                    } catch (InterruptedException e){
+                    }
+                    if (!pathToWatch.exists()) {
+                        if (FileWatcher.this.deletedEventListener != null){
+                            deletedEventListener.onDeleted();
+                        }
+                        break;
                     }
 
+                    Set<File> fileSet = FileUtil.listFiles(pathToWatch);
+                    for (File file : fileSet) {
+                        if (file.lastModified() > lastChecked) {
+                            if (FileWatcher.this.modifiedEventListener != null){
+                                modifiedEventListener.onModified(file);
+                            }
+
+                        }
+                    }
                 }
             }
-        }
+        });
     }
 
     FileWatcher deleted(OnDeletedEventListener listener){
