@@ -15,7 +15,6 @@ import java.util.Set;
 public class FileWatcher {
     private static final long CHECK_INTERVAL = 1000L;
     private static final Logger logger = new Logger(System.out);
-    private File pathToWatch;
     private OnDeletedEventListener deletedEventListener = null;
     private OnModifiedEventListener modifiedEventListener = null;
     private Thread watchThread = null;
@@ -50,7 +49,7 @@ public class FileWatcher {
     private void watch(final String path) throws InterruptedException {
         watchThread = new Thread(new Runnable() {
             public void run() {
-                pathToWatch = new File(path);
+                File pathToWatch = new File(path);
                 if (!pathToWatch.exists()) {
                     logger.log(pathToWatch + " is NOT exist");
                 }
@@ -61,25 +60,33 @@ public class FileWatcher {
                         Thread.sleep(CHECK_INTERVAL);
                     } catch (InterruptedException e){
                     }
+
                     if (!pathToWatch.exists()) {
                         if (FileWatcher.this.deletedEventListener != null){
                             deletedEventListener.onDeleted();
                         }
                         break;
                     }
-
-                    Set<File> fileSet = FileUtil.listFiles(pathToWatch);
-                    for (File file : fileSet) {
-                        if (file.lastModified() > lastChecked) {
-                            if (FileWatcher.this.modifiedEventListener != null){
-                                modifiedEventListener.onModified(file);
-                            }
-
+                    Set<File> modified = getModified(pathToWatch, lastChecked);
+                    for (File f : modified) {
+                        if (FileWatcher.this.modifiedEventListener != null){
+                            modifiedEventListener.onModified(f);
                         }
                     }
                 }
             }
         });
+    }
+
+    private Set<File> getModified(File pathToWatch, long lastChecked) {
+        Set<File> fileSet = FileUtil.listFiles(pathToWatch);
+        Set<File> modified = new HashSet<File>();
+        for (File file : fileSet) {
+            if (file.lastModified() > lastChecked) {
+                modified.add(file);
+            }
+        }
+        return modified;
     }
 
     FileWatcher deleted(OnDeletedEventListener listener){
