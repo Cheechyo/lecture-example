@@ -60,11 +60,11 @@ public class FileWatcher {
                 break;
             }
 
-            Set<File> fileSet = listFiles(pathToWatch);
+            Set<File> fileSet = FileUtil.listFiles(pathToWatch);
             for (File file : fileSet) {
                 if (file.lastModified() > lastChecked) {
                     if (this.modifiedEventListener != null){
-                        modifiedEventListener.onModefied(file);
+                        modifiedEventListener.onModified(file);
                     }
 
                 }
@@ -79,19 +79,5 @@ public class FileWatcher {
     FileWatcher modified(OnModifiedEventListener listener){
         this.modifiedEventListener = listener;
         return this;
-    }
-    private Set<File> listFiles(File path) {
-        Set<File> files = new HashSet<File>();
-        files.add(path);
-        if (path.isDirectory()) {
-            for (File aFile : path.listFiles(new FilenameFilter() {
-                public boolean accept(File dir, String name) {
-                    return !name.endsWith(File.separator + "..") && !name.endsWith(File.separator + ".");
-                }
-            })) {
-                files.addAll(listFiles(aFile));
-            }
-        }
-        return files;
     }
 }
