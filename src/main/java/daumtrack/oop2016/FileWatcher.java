@@ -17,12 +17,12 @@ public class FileWatcher {
     private static final Logger logger = new Logger(System.out);
     private File pathToWatch;
     private OnDeletedEventListener deletedEventListener = null;
-    private OnModefiedEventListener modefiedEventListener = null;
+    private OnModifiedEventListener modifiedEventListener = null;
     interface OnDeletedEventListener{
         void onDeleted();
     }
-    interface OnModefiedEventListener{
-        void onModefied(File f);
+    interface OnModifiedEventListener{
+        void onModified(File f);
     }
 
     public static void main(String[] args) throws InterruptedException {
@@ -36,8 +36,8 @@ public class FileWatcher {
                         logger.log("DELETED!");
                     }
                 })
-                .modeifed(new OnModefiedEventListener() {
-                    public void onModefied(File f) {
+                .modified(new OnModifiedEventListener() {
+                    public void onModified(File f) {
                         logger.log("MODIFIED: " + f);
                     }
                 })
@@ -63,8 +63,8 @@ public class FileWatcher {
             Set<File> fileSet = listFiles(pathToWatch);
             for (File file : fileSet) {
                 if (file.lastModified() > lastChecked) {
-                    if (this.modefiedEventListener != null){
-                        modefiedEventListener.onModefied(file);
+                    if (this.modifiedEventListener != null){
+                        modifiedEventListener.onModefied(file);
                     }
 
                 }
@@ -76,8 +76,8 @@ public class FileWatcher {
         this.deletedEventListener = listener;
         return this;
     }
-    FileWatcher modeifed(OnModefiedEventListener listener){
-        this.modefiedEventListener = listener;
+    FileWatcher modified(OnModifiedEventListener listener){
+        this.modifiedEventListener = listener;
         return this;
     }
     private Set<File> listFiles(File path) {
